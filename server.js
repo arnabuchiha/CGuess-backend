@@ -5,30 +5,69 @@ const socketio=require('socket.io');
 const app=express();
 const server=http.createServer(app);
 const io=socketio(server);
+const { v4: uuidv4 }=require('uuid')
+const mongoose=require('mongoose');
+const dotenv=require('dotenv');
+const Room=require('./model');
+const PORT=5000||process.env.PORT;
+dotenv.config();
+rooms={}
+/**
+ * Mongoose connection
+ */
+mongoose.connect(process.env.DB_CONNECT,
+    {useNewUrlParser:true,
+    useUnifiedTopology:true},
+    ()=>console.log('Connected to db'))
 
-const PORT=4000||process.env.PORT;
-
-app.use(express.static(path.join(__dirname,'public')))
-
-// io.on('connection', function(socket) {
-//     console.log('A user connected');
-//     socket.emit('FromAPI',{data:"asdas"})
-//     //Whenever someone disconnects this piece of code executed
-//     socket.on('disconnect', function () {
-//        console.log('A user disconnected');
-//     });
-//  });
-users = [];
+/**
+ * socket.io
+ */
+var roomno = uuidv4();
 io.on('connection', function(socket) {
-   console.log('A user connected');
-   socket.on('setUsername', function(data) {
-      if(users.indexOf(data) == -1) {
-         users.push(data);
-         socket.emit('userSet', {username: data});
-      } else {
-         socket.emit('userExists', data + ' username is taken! Try some other username.');
-      }
-      console.log(users)
-   })
-});
+   
+   //Increase roomno 2 clients are present in a room.
+   if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 6) roomno=uuidv4();
+   roomno="1";
+   socket.join("room-"+roomno);
+
+   //Send this event to everyone in the room.
+   console.log(roomno)
+   io.sockets.in("room-"+roomno).emit('connectToRoom', "You are in room no. "+roomno);
+  
+    socket.on('setUsername', function(data) {
+        console.log(data);
+        
+        if(users.indexOf(data) > -1) {
+        socket.emit('userExists', data + ' username is taken! Try some other username.');
+        } else {
+        users.push(data);
+        socket.emit('userSet', {username: data});
+        }
+    });
+    socket.on('msg', function(data) {
+        //Send message to everyone
+        console.log(data)
+        io.sockets.to(roomno).emit('newmsg', data);
+     })
+
+})
+// io.on('connection', function(socket) {
+//     Room.find().sort({ space:-1 }).limit(1)
+//         .exec(function(err,results) {
+//             console.log(results);
+//     });
+
+//    console.log('A user connected');
+
+//    socket.on('setUsername', function(data) {
+//       if(users.indexOf(data) == -1) {
+//          users.push(data);
+//          socket.emit('userSet', {username: data});
+//       } else {
+//          socket.emit('userExists', data + ' username is taken! Try some other username.');
+//       }
+//       console.log(users)
+//    })
+// });
 server.listen(PORT,()=>console.log(`Running on port: ${PORT}`));
