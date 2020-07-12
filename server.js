@@ -27,8 +27,7 @@ var roomno = uuidv4();
 io.on('connection', function(socket) {
    
    //Increase roomno 2 clients are present in a room.
-   if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 6) roomno=uuidv4();
-   roomno="1";
+   if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 1) roomno=uuidv4();
    socket.join("room-"+roomno);
 
    //Send this event to everyone in the room.
@@ -37,18 +36,12 @@ io.on('connection', function(socket) {
   
     socket.on('setUsername', function(data) {
         console.log(data);
-        
-        if(users.indexOf(data) > -1) {
-        socket.emit('userExists', data + ' username is taken! Try some other username.');
-        } else {
-        users.push(data);
         socket.emit('userSet', {username: data});
-        }
     });
     socket.on('msg', function(data) {
         //Send message to everyone
         console.log(data)
-        io.sockets.to(roomno).emit('newmsg', data);
+        io.sockets.to("room-"+roomno).emit('newmsg', data);
      })
 
 })
