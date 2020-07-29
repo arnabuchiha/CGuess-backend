@@ -15,10 +15,10 @@ rooms={}
 /**
  * Mongoose connection
  */
-mongoose.connect(process.env.DB_CONNECT,
-    {useNewUrlParser:true,
-    useUnifiedTopology:true},
-    ()=>console.log('Connected to db'))
+// mongoose.connect(process.env.DB_CONNECT,
+//     {useNewUrlParser:true,
+//     useUnifiedTopology:true},
+//     ()=>console.log('Connected to db'))
 
 /**
  * socket.io
@@ -27,7 +27,7 @@ var roomno = uuidv4();
 io.on('connection', function(socket) {
    
    //Increase roomno 2 clients are present in a room.
-   if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 1) roomno=uuidv4();
+   if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 5) roomno=uuidv4();
    socket.join("room-"+roomno);
 
    //Send this event to everyone in the room.
