@@ -43,6 +43,15 @@ io.on('connection', function(socket) {
         console.log(data)
         io.sockets.to("room-"+roomno).emit('newmsg', data);
      })
+    socket.on('ans',function(data){
+        if(data==50){
+            io.sockets.to("room-"+roomno).emit('newscore',50);
+        }
+        else{
+            io.sockets.to("room-"+roomno).emit('newscore',0);
+        }
+
+    })
 
 })
 // io.on('connection', function(socket) {
