@@ -36,7 +36,7 @@ io.on('connection', function(socket) {
   
     socket.on('setUsername', function(data) {
         console.log(data);
-        socket.emit('userSet', {username: data});
+        io.sockets.to("room-"+roomno).emit('userSet', {username: data.username});
     });
     socket.on('msg', function(data) {
         //Send message to everyone
@@ -44,11 +44,17 @@ io.on('connection', function(socket) {
         io.sockets.to("room-"+roomno).emit('newmsg', data);
      })
     socket.on('ans',function(data){
-        if(data==50){
-            io.sockets.to("room-"+roomno).emit('newscore',50);
+        if(data.ans==50){
+            io.sockets.to("room-"+roomno).emit('newscore',{
+                username:data.username,
+                score:50
+            });
         }
         else{
-            io.sockets.to("room-"+roomno).emit('newscore',0);
+            io.sockets.to("room-"+roomno).emit('newscore',{
+                username:data.username,
+                score:0 
+            });
         }
 
     })
