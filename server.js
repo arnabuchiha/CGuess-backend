@@ -9,9 +9,10 @@ const { v4: uuidv4 }=require('uuid')
 const mongoose=require('mongoose');
 const dotenv=require('dotenv');
 const Room=require('./model');
+const { randomBytes } = require('crypto');
 const PORT=5000||process.env.PORT;
 dotenv.config();
-rooms={}
+var rooms=[]
 /**
  * Mongoose connection
  */
@@ -25,18 +26,56 @@ rooms={}
  */
 var roomno = uuidv4();
 io.on('connection', function(socket) {
-   
+//     function newFact(){
+//         console.log(rooms["room-"+roomno])
+//        setTimeout(newFact,5*1000);
+//    }
    //Increase roomno 2 clients are present in a room.
    if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 5) roomno=uuidv4();
    socket.join("room-"+roomno);
-
+   function countDown(){
+        if(rooms["room-"+roomno].timer===0){
+            rooms["room-"+roomno].timer=5;
+            rooms["room-"+roomno].round+=1;
+            rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
+            console.log(rooms["room-"+roomno])
+            io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
+        }
+        if(rooms["room-"+roomno].round==4){
+            //Declare the winner
+        }
+        rooms["room-"+roomno].timer-=1;
+        
+        setTimeout(countDown,1000);
+   }
+   if(!rooms["room-"+roomno]){
+       rooms["room-"+roomno]={
+           scores:[],
+           currentFact:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur velit nisl, finibus vel pulvinar at, cursus id urna.",
+           timer:5,
+           city:"",
+           round:0
+       };
+       io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
+       countDown();
+       
+    //    newFact();
+   }
+   else{
+        io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
+        io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
+   }
+   
    //Send this event to everyone in the room.
    console.log(roomno)
    io.sockets.in("room-"+roomno).emit('connectToRoom', "You are in room no. "+roomno);
-  
+   
     socket.on('setUsername', function(data) {
         console.log(data);
         io.sockets.to("room-"+roomno).emit('userSet', {username: data.username});
+        rooms["room-"+roomno].scores.push({name:data.username,score:0});
+        io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
+        console.log(rooms)
     });
     socket.on('msg', function(data) {
         //Send message to everyone
