@@ -4,12 +4,10 @@ const path=require('path');
 const socketio=require('socket.io');
 const app=express();
 const server=http.createServer(app);
-const io=socketio(server);
+const io=socketio(server).listen(server);
 const { v4: uuidv4 }=require('uuid')
 const mongoose=require('mongoose');
 const dotenv=require('dotenv');
-const Room=require('./model');
-const { randomBytes } = require('crypto');
 const PORT=5000||process.env.PORT;
 dotenv.config();
 var rooms=[]
