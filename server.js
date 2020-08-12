@@ -39,15 +39,16 @@ io.on('connection', function(socket) {
    
    
    function countDown(){
-
-    if(rooms.length===0 || rooms["room-"+roomno].length===0)
+    try
+    {
+    if(rooms["room-"+roomno].length===0)
     {
         console.log('Room Empty!!')
-        return ;
+        
     }
-
-        if(rooms["room-"+roomno].timer===0){
-            rooms["room-"+roomno].timer=60;
+        console.log(rooms["room-"+roomno].timer)
+        if(rooms.length!=0 && rooms["room-"+roomno].timer===0){
+            rooms["room-"+roomno].timer=5;
             rooms["room-"+roomno].round+=1;
             rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
             //extra added
@@ -64,12 +65,17 @@ io.on('connection', function(socket) {
         
         setTimeout(countDown,1000);
    }
+   catch(err)
+   {
+       return;
+   }
+}
    if(!rooms["room-"+roomno]){
        rooms["room-"+roomno]={
            scores:[],
         //    users:[],
            currentFact:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur velit nisl, finibus vel pulvinar at, cursus id urna.",
-           timer:60,
+           timer:5,
            city:Math.random().toString(36).substring(7),
            round:0
        };
