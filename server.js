@@ -39,16 +39,16 @@ io.on('connection', function(socket) {
    
    
    function countDown(){
-    try
-    {
-    if(rooms["room-"+roomno].length===0)
+       try
+       {
+
+    if(rooms["room-"+roomno]){if(rooms["room-"+roomno].scores.length===0)
     {
         console.log('Room Empty!!')
-        
-    }
-        console.log(rooms["room-"+roomno].timer)
-        if(rooms.length!=0 && rooms["room-"+roomno].timer===0){
-            rooms["room-"+roomno].timer=5;
+    }}
+        try{
+        if(rooms["room-"+roomno].timer===0){
+            rooms["room-"+roomno].timer=25;
             rooms["room-"+roomno].round+=1;
             rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
             //extra added
@@ -62,7 +62,11 @@ io.on('connection', function(socket) {
             //Declare the winner
         }
         rooms["room-"+roomno].timer-=1;
-        
+    }
+    catch(err){
+        console.log("ERRRRRRRR")
+        return;
+    }
         setTimeout(countDown,1000);
    }
    catch(err)
@@ -74,8 +78,8 @@ io.on('connection', function(socket) {
        rooms["room-"+roomno]={
            scores:[],
         //    users:[],
-           currentFact:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur velit nisl, finibus vel pulvinar at, cursus id urna.",
-           timer:5,
+           currentFact:"Waiting For players to join the room!",
+           timer:25,
            city:Math.random().toString(36).substring(7),
            round:0
        };
@@ -145,7 +149,8 @@ io.on('connection', function(socket) {
 
     socket.on('mapclicked',(data)=>{
 
-        console.log(socket.playerName+' Clicked on map',1000);
+        console.log(socket.playerName+' Clicked on map '+data.location.lat +"  "+data.location.lng);
+
         
     })
 
@@ -171,7 +176,7 @@ io.on('connection', function(socket) {
             delete rooms["room-"+socket.roomKey];
         }
 
-        socket.disconnect();
+        // socket.disconnect();
 
     })
 
