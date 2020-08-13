@@ -39,87 +39,67 @@ io.on('connection', function(socket) {
    
    
    function countDown(){
-       try
-       {
+        try
+        {
 
-    if(rooms["room-"+roomno]){if(rooms["room-"+roomno].scores.length===0)
-    {
-        console.log('Room Empty!!')
-    }}
-        try{
-        if(rooms["room-"+roomno].timer===0){
-            rooms["room-"+roomno].timer=25;
-            rooms["room-"+roomno].round+=1;
-            rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
-            //extra added
-            rooms["room-"+roomno].city=Math.random().toString(36).substring(7);
-           
-            console.log(rooms["room-"+roomno])
-          //  io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
-          io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+        if(rooms["room-"+roomno]){if(rooms["room-"+roomno].scores.length===0)
+        {
+            console.log('Room Empty!!')
+        }}
+            try{
+            if(rooms["room-"+roomno].timer===0){
+                rooms["room-"+roomno].timer=25;
+                rooms["room-"+roomno].round+=1;
+                rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
+                //extra added
+                rooms["room-"+roomno].city=Math.random().toString(36).substring(7);
+            
+                console.log(rooms["room-"+roomno])
+            //  io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
+            io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+            }
+            if(rooms["room-"+roomno].round==4){
+                //Declare the winner
+            }
+            rooms["room-"+roomno].timer-=1;
         }
-        if(rooms["room-"+roomno].round==4){
-            //Declare the winner
+        catch(err){
+            console.log("ERRRRRRRR")
+            return;
         }
-        rooms["room-"+roomno].timer-=1;
+            setTimeout(countDown,1000);
+        }
+        catch(err)
+        {
+            return;
+        }
     }
-    catch(err){
-        console.log("ERRRRRRRR")
-        return;
-    }
-        setTimeout(countDown,1000);
-   }
-   catch(err)
-   {
-       return;
-   }
-}
-   if(!rooms["room-"+roomno]){
+    if(!rooms["room-"+roomno]){
        rooms["room-"+roomno]={
            scores:[],
+           markers:[],
         //    users:[],
            currentFact:"Waiting For players to join the room!",
            timer:25,
            city:Math.random().toString(36).substring(7),
            round:0
-       };
-    //    io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
-    //    //Extra added
-    //    io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
-     
-    //    io.sockets.in("room-"+roomno).emit('roomCity',rooms["room-"+roomno].city);
-    //    io.sockets.in("room-"+roomno).emit('roomRound',rooms["room-"+roomno].round);
-    //    io.sockets.in("room-"+roomno).emit('roomTime',rooms["room-"+roomno].timer);
+        };
 
-    io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
-       countDown();
-       
-    //    newFact();
-   }
-   else{
-    io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
-    
-        // io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
-        // io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
-        // //Extra added
-        // io.sockets.in("room-"+roomno).emit('roomCity',rooms["room-"+roomno].city);
-        // io.sockets.in("room-"+roomno).emit('roomRound',rooms["room-"+roomno].round); 
-        // io.sockets.in("room-"+roomno).emit('roomTime',rooms["room-"+roomno].timer);
-         }
+        io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+        countDown();
+    }
+    else{
+        io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+    }
    
    //Send this event to everyone in the room.
-//    rooms["room-"+roomno].user.push(socket.playerName)
-   console.log(roomno)
-   io.sockets.in("room-"+roomno).emit('connectToRoom', "You are in room no. "+roomno);
-    
-    
 
+    io.sockets.in("room-"+roomno).emit('connectToRoom', "You are in room no. "+roomno);
+    
+    
 
     socket.on('setUsername', function(data) {
-        console.log('ONe')
-        console.log(data);
         socket.playerName=data.username;
-        console.log(socket.playerName)
         // io.sockets.to("room-"+roomno).emit('joinMsg', {user: data.username});
         io.sockets.to("room-"+roomno).emit('userSet', {username: data.username});
         rooms["room-"+roomno].scores.push({name:data.username,score:0});
@@ -148,25 +128,40 @@ io.on('connection', function(socket) {
     })
 
     socket.on('mapclicked',(data)=>{
-
+        const marks=[...rooms["room-"+roomno].markers]
+        if(marks.length===0)
+            rooms["room-"+roomno].markers.push(data);
+        else{
+            var flag=0
+            marks.forEach(element => {
+                if(element.username===data.username){
+                    element.location=data.location;
+                    flag=1;
+                }
+            });
+            if(flag===0){
+                rooms["room-"+roomno].markers.push(data);
+            }
+            else{
+                rooms["room-"+roomno].markers=marks;
+            }
+        }
+        io.sockets.in("room-"+roomno).emit('markers',rooms["room-"+roomno].markers);
         console.log(socket.playerName+' Clicked on map '+data.location.lat +"  "+data.location.lng);
 
         
     })
 
     socket.on('disconnect',(data)=>{
-        console.log('Disconnect fired!!')
+            console.log('Disconnect fired!!')
+        
+        var x=socket.playerName;
+            console.log('YOYOOYOYOYO')
+            console.log(socket.playerName)
+        const usersInRoom = rooms["room-"+socket.roomKey].scores.filter((item) => item.name !== socket.playerName);
+        rooms["room-"+socket.roomKey].scores =usersInRoom;
     
-      var x=socket.playerName;
-        console.log('YOYOOYOYOYO')
-        console.log(socket.playerName)
-      const usersInRoom = rooms["room-"+socket.roomKey].scores.filter((item) => item.name !== socket.playerName);
-      rooms["room-"+socket.roomKey].scores =usersInRoom;
-  
-      io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
-
-
-
+        io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
         const v="room-"+socket.roomKey;
         console.log('This is room Key')
         console.log(v)
@@ -182,23 +177,4 @@ io.on('connection', function(socket) {
 
 })
 
-
-// io.on('connection', function(socket) {
-//     Room.find().sort({ space:-1 }).limit(1)
-//         .exec(function(err,results) {
-//             console.log(results);
-//     });
-
-//    console.log('A user connected');
-
-//    socket.on('setUsername', function(data) {
-//       if(users.indexOf(data) == -1) {
-//          users.push(data);
-//          socket.emit('userSet', {username: data});
-//       } else {
-//          socket.emit('userExists', data + ' username is taken! Try some other username.');
-//       }
-//       console.log(users)
-//    })
-// });
 server.listen(PORT,()=>console.log(`Running on port: ${PORT}`));
