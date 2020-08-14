@@ -47,9 +47,14 @@ io.on('connection', function(socket) {
             console.log('Room Empty!!')
         }}
             try{
+            
             if(rooms["room-"+roomno].timer===0){
-                rooms["room-"+roomno].timer=25;
+                rooms["room-"+roomno].timer=5;
                 rooms["room-"+roomno].round+=1;
+                if(rooms["room-"+roomno].round==5){
+                    io.sockets.in("room-"+roomno).emit('showresults',true);
+                    return;
+                }
                 rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
                 //extra added
                 rooms["room-"+roomno].city=Math.random().toString(36).substring(7);
@@ -58,9 +63,7 @@ io.on('connection', function(socket) {
             //  io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
             io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
             }
-            if(rooms["room-"+roomno].round==4){
-                //Declare the winner
-            }
+            
             rooms["room-"+roomno].timer-=1;
         }
         catch(err){
@@ -80,7 +83,7 @@ io.on('connection', function(socket) {
            markers:[],
         //    users:[],
            currentFact:"Waiting For players to join the room!",
-           timer:25,
+           timer:5,
            city:Math.random().toString(36).substring(7),
            round:0
         };
