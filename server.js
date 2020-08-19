@@ -55,13 +55,15 @@ io.on('connection', function(socket) {
                     io.sockets.in("room-"+roomno).emit('showresults',true);
                     return;
                 }
+                else{
                 rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
                 //extra added
                 rooms["room-"+roomno].city=Math.random().toString(36).substring(7);
             
                 console.log(rooms["room-"+roomno])
             //  io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
-            io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+                io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+                }
             }
             
             rooms["room-"+roomno].timer-=1;
