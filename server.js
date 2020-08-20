@@ -12,6 +12,43 @@ const mongoose=require('mongoose');
 const dotenv=require('dotenv');
 const PORT=5000||process.env.PORT;
 dotenv.config();
+
+
+
+
+const { MongoClient } = require("mongodb");
+
+// Replace the uri string with your MongoDB deployment's connection string.
+const uri ="mongodb+srv://test123:test123@cguesscluster.xmwhw.mongodb.net/CguessDB?retryWrites=true&w=majority";
+
+const client = new MongoClient(uri,{useNewUrlParser: true, useUnifiedTopology: true});
+var dbdata=''
+
+
+
+async function run() {
+    try {
+      await client.connect();
+  
+      const database = client.db('CguessDB');
+      const collection = database.collection('Cities');
+  
+      // // Query for a movie that has the title 'Back to the Future'
+      const query = { name: 'New York' };
+       const city = await collection.find().toArray();
+       dbdata=city;
+  
+      console.log(dbdata);
+    } finally {
+      // Ensures that the client will close when you finish/error
+      await client.close();
+    }
+  }
+  run().catch(console.dir).then(()=>
+  {
+    
+
+
 var rooms=[]
 /**
  * Mongoose connection
@@ -24,6 +61,14 @@ var rooms=[]
 /**
  * socket.io
  */
+
+
+
+
+
+
+
+
 var roomno = uuidv4();
 io.on('connection', function(socket) {
 //     function newFact(){
@@ -51,25 +96,44 @@ io.on('connection', function(socket) {
             if(rooms["room-"+roomno].timer===0){
                 rooms["room-"+roomno].timer=5;
                 rooms["room-"+roomno].round+=1;
+                //Game finished
                 if(rooms["room-"+roomno].round==5){
+                    try{
+                        delete rooms["room-"+socket.roomKey];
+                    }catch(err){
+                        console.log("Room deleted already")
+                    }
                     io.sockets.in("room-"+roomno).emit('showresults',true);
+                    socket.disconnect();
+                    roomno=uuidv4();
                     return;
                 }
-                else{
-                rooms["room-"+roomno].currentFact=Math.random().toString(36).substring(7);
+
+                var randIndex=parseInt(Number(Math.random()*(dbdata.length-1)),10)
+                while(rooms["room-"+roomno].factIndex.includes(randIndex))
+                {
+                    randIndex=parseInt(Number(Math.random()*(dbdata.length-1)),10)
+                }
+                console.log('INDEX IS'+randIndex)
+                console.log(dbdata[randIndex]['name']);
+                rooms["room-"+roomno].factIndex.push(randIndex)
+                rooms["room-"+roomno].currentFact=dbdata[randIndex]['img']
                 //extra added
-                rooms["room-"+roomno].city=Math.random().toString(36).substring(7);
-            
+                rooms["room-"+roomno].city=dbdata[randIndex]['name']
+
+                
+               
                 console.log(rooms["room-"+roomno])
             //  io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
                 io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
                 }
-            }
+            
             
             rooms["room-"+roomno].timer-=1;
         }
         catch(err){
             console.log("ERRRRRRRR")
+            console.log(err)
             return;
         }
             setTimeout(countDown,1000);
@@ -85,12 +149,13 @@ io.on('connection', function(socket) {
            markers:[],
         //    users:[],
            currentFact:"Waiting For players to join the room!",
-           timer:5,
+           timer:0,
            city:Math.random().toString(36).substring(7),
-           round:0
+           round:0,
+           factIndex:[]
         };
 
-        io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+        // io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
         countDown();
     }
     else{
@@ -163,6 +228,7 @@ io.on('connection', function(socket) {
         var x=socket.playerName;
             console.log('YOYOOYOYOYO')
             console.log(socket.playerName)
+        try{
         const usersInRoom = rooms["room-"+socket.roomKey].scores.filter((item) => item.name !== socket.playerName);
         rooms["room-"+socket.roomKey].scores =usersInRoom;
     
@@ -174,12 +240,17 @@ io.on('connection', function(socket) {
         {
             console.log('deletion complete!')
             delete rooms["room-"+socket.roomKey];
+        }}
+        catch(err){
+            console.log("room not available");
         }
 
-        // socket.disconnect();
+         socket.disconnect();
 
     })
 
 })
+  }
+);
 
 server.listen(PORT,()=>console.log(`Running on port: ${PORT}`));
