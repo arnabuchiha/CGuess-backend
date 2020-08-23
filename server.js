@@ -14,7 +14,9 @@ const PORT=5000||process.env.PORT;
 dotenv.config();
 
 
-
+function replace(str) {
+    return str.split("").map(char => "_ " ).join("");
+}
 
 const { MongoClient } = require("mongodb");
 
@@ -94,7 +96,13 @@ io.on('connection', function(socket) {
             try{
             
             if(rooms["room-"+roomno].timer===0){
-                rooms["room-"+roomno].timer=5;
+                if(rooms["room-"+roomno].round>0){
+                    io.sockets.to("room-"+roomno).emit('newmsg', {
+                        message:'The city was '+rooms["room-"+roomno].city,
+                        user: 'System'
+                    });
+                }
+                rooms["room-"+roomno].timer=6000;
                 rooms["room-"+roomno].round+=1;
                 //Game finished
                 if(rooms["room-"+roomno].round==5){
@@ -125,15 +133,19 @@ io.on('connection', function(socket) {
                
                 console.log(rooms["room-"+roomno])
             //  io.sockets.in("room-"+roomno).emit("newFact",rooms["room-"+roomno].currentFact);
-                io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
-                }
+                io.sockets.in("room-"+roomno).emit('updates',{
+                    city:replace(rooms["room-"+roomno].city),
+                    currentFact:rooms["room-"+roomno].currentFact,
+                    round:rooms["room-"+roomno].round,
+                    timer:rooms["room-"+roomno].timer
+                });
+            }
             
             
             rooms["room-"+roomno].timer-=1;
         }
         catch(err){
             console.log("ERRRRRRRR")
-            console.log(err)
             return;
         }
             setTimeout(countDown,1000);
@@ -159,7 +171,12 @@ io.on('connection', function(socket) {
         countDown();
     }
     else{
-        io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
+        io.sockets.in("room-"+roomno).emit('updates',{
+            city:replace(rooms["room-"+roomno].city),
+            currentFact:rooms["room-"+roomno].currentFact,
+            round:rooms["room-"+roomno].round,
+            timer:rooms["room-"+roomno].timer
+        });
     }
    
    //Send this event to everyone in the room.
@@ -198,6 +215,7 @@ io.on('connection', function(socket) {
     })
 
     socket.on('mapclicked',(data)=>{
+        try{
         const marks=[...rooms["room-"+roomno].markers]
         if(marks.length===0)
             rooms["room-"+roomno].markers.push(data);
@@ -218,6 +236,9 @@ io.on('connection', function(socket) {
         }
         io.sockets.in("room-"+roomno).emit('markers',rooms["room-"+roomno].markers);
         console.log(socket.playerName+' Clicked on map '+data.location.lat +"  "+data.location.lng);
+    }catch(err){
+        console.log("Map clicked error")
+    }
 
         
     })
