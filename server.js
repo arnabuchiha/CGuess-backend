@@ -18,6 +18,23 @@ function replace(str) {
     return str.split("").map(char => "_ " ).join("");
 }
 
+function score_calculate(lat,long,lat_ans,long_ans,time)
+{   
+    console.log('Time is-->',time)
+    let score=0;
+    let dist=Number(Math.ceil(Math.sqrt(((lat-lat_ans)**2)+((long-long_ans)**2))));
+    console.log('dist is ',dist)
+    if(dist<2)
+        score=50+time;
+    else if(dist>=2 && dist<3)
+        score=40+time;
+    else if(dist>=3 && dist<=4)
+        score=30+time;
+
+    return score;
+
+}
+
 const { MongoClient } = require("mongodb");
 
 // Replace the uri string with your MongoDB deployment's connection string.
@@ -102,8 +119,9 @@ io.on('connection', function(socket) {
                         user: 'System'
                     });
                 }
-                rooms["room-"+roomno].timer=6000;
+                rooms["room-"+roomno].timer=60;
                 rooms["room-"+roomno].round+=1;
+                rooms["room-"+roomno].update=[];
                 //Game finished
                 if(rooms["room-"+roomno].round==5){
                     try{
@@ -128,6 +146,10 @@ io.on('connection', function(socket) {
                 rooms["room-"+roomno].currentFact=dbdata[randIndex]['img']
                 //extra added
                 rooms["room-"+roomno].city=dbdata[randIndex]['name']
+                rooms["room-"+roomno].lat=dbdata[randIndex]['lat']
+                rooms["room-"+roomno].long=dbdata[randIndex]['long']
+                rooms["room-"+roomno].update_done=[]
+               
 
                 
                
@@ -164,7 +186,10 @@ io.on('connection', function(socket) {
            timer:0,
            city:Math.random().toString(36).substring(7),
            round:0,
-           factIndex:[]
+           factIndex:[],
+           lat:0,
+           long:0,
+           update_done:[]
         };
 
         // io.sockets.in("room-"+roomno).emit('updates',rooms["room-"+roomno]);
@@ -198,26 +223,48 @@ io.on('connection', function(socket) {
         console.log(data)
         io.sockets.to("room-"+roomno).emit('newmsg', data);
      })
-    socket.on('ans',function(data){
-        if(data.ans==50){
-            io.sockets.to("room-"+roomno).emit('newscore',{
-                username:data.username,
-                score:50
-            });
-        }
-        else{
-            io.sockets.to("room-"+roomno).emit('newscore',{
-                username:data.username,
-                score:0 
-            });
-        }
+    // socket.on('ans',function(data){
+    //     if(data.ans==50){
+    //         io.sockets.to("room-"+roomno).emit('newscore',{
+    //             username:data.username,
+    //             score:50
+    //         });
+    //     }
+    //     else{
+    //         io.sockets.to("room-"+roomno).emit('newscore',{
+    //             username:data.username,
+    //             score:0 
+    //         });
+    //     }
 
-    })
+    // })
 
     socket.on('mapclicked',(data)=>{
         try{
+            if(rooms["room-"+roomno].update_done.includes(socket.playerName))
+            {
+                console.log('Answer found in array!!')
+                return ;
+            }
+        let lat_ans=Number(rooms["room-"+roomno].lat);
+        let long_ans=Number(rooms["room-"+roomno].long);
+        let time_left=Number(rooms["room-"+roomno].timer);
+        let curr_score=score_calculate(Number(data.location.lat),Number(data.location.lng),lat_ans,long_ans,time_left)
+        let topush=true;
+        if(curr_score>0)
+        {
+            io.sockets.to("room-"+roomno).emit('newmsg', {
+                message:socket.playerName+' chose the correct ans!!',
+                user: 'System'
+            });
+            //remove marker from array
+            topush=false;
+
+
+         
+        }
         const marks=[...rooms["room-"+roomno].markers]
-        if(marks.length===0)
+        if(marks.length===0 && curr_score===0 && topush)
             rooms["room-"+roomno].markers.push(data);
         else{
             var flag=0
@@ -227,7 +274,7 @@ io.on('connection', function(socket) {
                     flag=1;
                 }
             });
-            if(flag===0){
+            if(flag===0 && curr_score===0 && topush){
                 rooms["room-"+roomno].markers.push(data);
             }
             else{
@@ -235,9 +282,39 @@ io.on('connection', function(socket) {
             }
         }
         io.sockets.in("room-"+roomno).emit('markers',rooms["room-"+roomno].markers);
-        console.log(socket.playerName+' Clicked on map '+data.location.lat +"  "+data.location.lng);
+      
+        console.log(socket.playerName+' Clicked on map '+data.location.lat +"  "+data.location.lng);        
+        console.log(curr_score)
+         let score_arr=rooms["room-"+roomno].scores;
+         score_arr.forEach((dat,index)=>{
+             console.log(dat.name,dat.score)
+             if(dat.name===socket.playerName)
+             {
+                 console.log(socket.playerName)
+                 if(curr_score!=0 && !(rooms["room-"+roomno].update_done.includes(socket.playerName)))
+                 {
+                 console.log('Score Added to player',socket.playerName);
+                 dat.score+=curr_score;
+                 score_arr[index].score+=curr_score;
+                 console.log("Inc score",dat.score)
+                 io.sockets.to("room-"+roomno).emit('newscore',{
+                                 username:dat.name,
+                                 score:dat.score
+                             });
+                 rooms["room-"+roomno].update_done.push(socket.playerName);
+                 }
+                 else
+                 {
+                     console.log('Already Updated!!!')
+                 }
+
+
+             }
+         })
+        //calculate points of user --update in db :/
     }catch(err){
         console.log("Map clicked error")
+        console.log(err)
     }
 
         
