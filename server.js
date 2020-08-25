@@ -4,6 +4,12 @@ const path=require('path');
 const socketio=require('socket.io');
 const app=express();
 var cors = require('cors')
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    next();
+  });
+  
 app.use(cors())
 const server=http.createServer(app);
 const io=socketio(server).listen(server);
