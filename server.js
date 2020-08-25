@@ -114,6 +114,8 @@ io.on('connection', function(socket) {
             
             if(rooms["room-"+roomno].timer===0){
                 if(rooms["room-"+roomno].round>0){
+                    rooms["room-"+roomno].markers=[];
+                    io.sockets.in("room-"+roomno).emit('markers',rooms["room-"+roomno].markers);
                     io.sockets.to("room-"+roomno).emit('newmsg', {
                         message:'The city was '+rooms["room-"+roomno].city,
                         user: 'System'
@@ -123,7 +125,7 @@ io.on('connection', function(socket) {
                 rooms["room-"+roomno].round+=1;
                 rooms["room-"+roomno].update=[];
                 //Game finished
-                if(rooms["room-"+roomno].round==5){
+                if(rooms["room-"+roomno].round===5){
                     try{
                         delete rooms["room-"+socket.roomKey];
                     }catch(err){
