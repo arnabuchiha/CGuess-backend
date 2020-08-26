@@ -5,7 +5,7 @@ const socketio=require('socket.io');
 const app=express();
 var cors = require('cors')
   
-app.use(cors())
+app.use(cors({credentials: true, origin: 'http://localhost:3000'}));
 const server=http.createServer(app);
 const io=socketio(server).listen(server);
 const { v4: uuidv4 }=require('uuid')
