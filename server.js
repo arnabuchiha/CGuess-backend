@@ -6,7 +6,7 @@ const app=express();
 var cors = require('cors')
   
 app.use(cors({credentials: true, origin: 'http://localhost:3000'}));
-const server=http.createServer(app);
+const server=app.listen(process.env.PORT || 5000,()=>console.log(`Running on port: ${PORT}`));
 const io=socketio(server).listen(server);
 const { v4: uuidv4 }=require('uuid')
 const mongoose=require('mongoose');
@@ -352,4 +352,3 @@ io.on('connection', function(socket) {
   }
 );
 
-app.listen(process.env.PORT || 5000,()=>console.log(`Running on port: ${PORT}`));
