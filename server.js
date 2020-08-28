@@ -19,7 +19,7 @@ function replace(str) {
 
 function score_calculate(lat,long,lat_ans,long_ans,time)
 {   
-    console.log('Time is-->',time)
+    // console.log('Time is-->',time)
     let score=0;
     let dist=Number(Math.ceil(Math.sqrt(((lat-lat_ans)**2)+((long-long_ans)**2))));
     console.log('dist is ',dist)
@@ -56,7 +56,7 @@ async function run() {
        const city = await collection.find().toArray();
        dbdata=city;
   
-      console.log(dbdata);
+    //   console.log(dbdata);
     } finally {
       // Ensures that the client will close when you finish/error
       await client.close();
@@ -99,7 +99,7 @@ io.on('connection', function(socket) {
    if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 5) roomno=uuidv4();
    socket.join("room-"+roomno);
    socket.roomKey=roomno;
-   
+   io.sockets.in("room-"+roomno).emit('connected',true);
    
    function countDown(){
         try
