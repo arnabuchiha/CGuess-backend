@@ -16,7 +16,9 @@ dotenv.config();
 function replace(str) {
     return str.split("").map(char => "_ " ).join("");
 }
-
+/*
+    Calculate score of the user according to coordinates input
+*/
 function score_calculate(lat,long,lat_ans,long_ans,time)
 {   
     // console.log('Time is-->',time)
@@ -43,7 +45,7 @@ const client = new MongoClient(uri,{useNewUrlParser: true, useUnifiedTopology: t
 var dbdata=''
 
 
-
+//Fetch all the data from database
 async function run() {
     try {
       await client.connect();
@@ -68,32 +70,9 @@ async function run() {
 
 
 var rooms=[]
-/**
- * Mongoose connection
- */
-// mongoose.connect(process.env.DB_CONNECT,
-//     {useNewUrlParser:true,
-//     useUnifiedTopology:true},
-//     ()=>console.log('Connected to db'))
-
-/**
- * socket.io
- */
-
-
-
-
-
-
-
 
 var roomno = uuidv4();
 io.on('connection', function(socket) {
-//     function newFact(){
-//         console.log(rooms["room-"+roomno])
-//        setTimeout(newFact,5*1000);
-//    }
-
     
    //Increase roomno 2 clients are present in a room.
    if(io.nsps['/'].adapter.rooms["room-"+roomno] && io.nsps['/'].adapter.rooms["room-"+roomno].length > 5) roomno=uuidv4();
@@ -110,7 +89,7 @@ io.on('connection', function(socket) {
             console.log('Room Empty!!')
         }}
             try{
-            
+            //Round end logic
             if(rooms["room-"+roomno].timer===0){
                 if(rooms["room-"+roomno].round>0){
                     rooms["room-"+roomno].markers=[];
@@ -178,6 +157,7 @@ io.on('connection', function(socket) {
             return;
         }
     }
+    //First time creation of room
     if(!rooms["room-"+roomno]){
        rooms["room-"+roomno]={
            scores:[],
@@ -215,7 +195,7 @@ io.on('connection', function(socket) {
         socket.playerName=data.username;
         // io.sockets.to("room-"+roomno).emit('joinMsg', {user: data.username});
         io.sockets.to("room-"+roomno).emit('userSet', {username: data.username});
-        rooms["room-"+roomno].scores.push({name:data.username,score:0});
+        rooms["room-"+roomno].scores.push({name:data.username,score:0,avaterID:Math.random()});
         io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
         console.log(rooms)
     });
@@ -224,22 +204,6 @@ io.on('connection', function(socket) {
         console.log(data)
         io.sockets.to("room-"+roomno).emit('newmsg', data);
      })
-    // socket.on('ans',function(data){
-    //     if(data.ans==50){
-    //         io.sockets.to("room-"+roomno).emit('newscore',{
-    //             username:data.username,
-    //             score:50
-    //         });
-    //     }
-    //     else{
-    //         io.sockets.to("room-"+roomno).emit('newscore',{
-    //             username:data.username,
-    //             score:0 
-    //         });
-    //     }
-
-    // })
-
     socket.on('mapclicked',(data)=>{
         try{
             if(rooms["room-"+roomno].update_done.includes(socket.playerName))
