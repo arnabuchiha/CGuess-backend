@@ -168,7 +168,7 @@ io.on('connection', function(socket) {
             rooms["room-"+roomno].timer-=1;
         }
         catch(err){
-            console.log("ERRRRRRRR")
+            console.log(err)
             return;
         }
             setTimeout(countDown,1000);
