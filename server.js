@@ -195,14 +195,20 @@ io.on('connection', function(socket) {
         socket.playerName=data.username;
         // io.sockets.to("room-"+roomno).emit('joinMsg', {user: data.username});
         io.sockets.to("room-"+roomno).emit('userSet', {username: data.username});
-        rooms["room-"+roomno].scores.push({name:data.username,score:0,avaterID:Math.random()});
+        rooms["room-"+roomno][data.username]=Math.random();
+        rooms["room-"+roomno].scores.push({name:data.username,score:0,avaterID:rooms["room-"+roomno][data.username]});
+        
         io.sockets.in("room-"+roomno).emit('scores',rooms["room-"+roomno].scores);
         console.log(rooms)
     });
     socket.on('msg', function(data) {
         //Send message to everyone
         console.log(data)
-        io.sockets.to("room-"+roomno).emit('newmsg', data);
+        io.sockets.to("room-"+roomno).emit('newmsg', {
+            message:data.message,
+            user:data.user,
+            avaterID:rooms["room-"+roomno][data.user]
+        });
      })
     socket.on('mapclicked',(data)=>{
         try{
