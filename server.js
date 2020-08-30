@@ -204,11 +204,15 @@ io.on('connection', function(socket) {
     socket.on('msg', function(data) {
         //Send message to everyone
         console.log(data)
+        try{
         io.sockets.to("room-"+roomno).emit('newmsg', {
             message:data.message,
             user:data.user,
             avaterID:rooms["room-"+roomno][data.user]
         });
+        }catch(err){
+            console.log(err);
+        }
      })
     socket.on('mapclicked',(data)=>{
         try{
